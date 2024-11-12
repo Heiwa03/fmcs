@@ -5,7 +5,7 @@ namespace Hashing
 {
     abstract class HashingAlgorithm
     {
-        public abstract string Hash(string input);
+        public abstract string Hash(byte[] input);
     }
     class MD5 : HashingAlgorithm
     {
@@ -48,10 +48,10 @@ namespace Hashing
         private static uint LeftRotate(uint x, int n) => (x << n) | (x >> (32 - n));
 
         // Computes the MD5 hash of the input string
-        public override string Hash(string input)
+        public override string Hash(byte[] input)
         {
             // Step 1: Pad the message
-            byte[] paddedMessage = PadMessageAndAppendLength(Encoding.UTF8.GetBytes(input));
+            byte[] paddedMessage = PadMessageAndAppendLength(input);
 
             // Step 2: Break the message into 512-bit blocks
             uint[] blocks = BreakMessageIntoBlocks(paddedMessage);
