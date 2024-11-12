@@ -12,11 +12,15 @@ namespace FMCS
             HashingAlgorithm hasher = new MD5();
             try
             {
-                string filePath = "./target_test_folder/testfile.img";
-                //byte[] fileContents = FileHandler.ReadFileAsByteArray(filePath);
-                byte[] fileContents = FileHandler.ReadFileAsByteArray(filePath);
-                Console.WriteLine("File read successfully. Byte array length: " + fileContents.Length);
-                Console.WriteLine(hasher.Hash(fileContents));
+                string folderPath = "./target_test_folder";
+                List<string> filePaths = FileHandler.GetFilePaths(folderPath);
+                Console.WriteLine("Files in folder:");
+                foreach (string filePath in filePaths)
+                {
+                    byte[] fileContents = FileHandler.ReadFileAsByteArray(filePath);
+                    Console.WriteLine("File " + filePath + " read successfully. Byte array length: " + fileContents.Length);
+                    Console.WriteLine(hasher.Hash(fileContents));
+                }
             }
             catch (Exception ex)
             {
@@ -51,5 +55,18 @@ namespace FMCS
             // Read the file contents into a string
             return File.ReadAllText(filePath);
         }
+
+        public static List<string> GetFilePaths(string folderPath)
+        {
+            // Check if the folder exists
+            if (!Directory.Exists(folderPath))
+            {
+                throw new DirectoryNotFoundException("The specified folder was not found.");
+            }
+
+            // Get all file paths in the folder
+            string[] filePaths = Directory.GetFiles(folderPath);
+            return new List<string>(filePaths);
+        }       
     }
 }
