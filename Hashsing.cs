@@ -90,39 +90,39 @@ namespace FMCS
                 uint DD = d;
 
                 // Round 1
-                for (int j = 0; j < 16; j++)
+                for (int j = 0; j < 16; j += 4)
                 {
                     a = b + LeftRotate(a + F(b, c, d) + X[j] + T[j], 7);
-                    d = a + LeftRotate(d + F(a, b, c) + X[(j + 1) % 16] + T[j + 1], 12);
-                    c = d + LeftRotate(c + F(d, a, b) + X[(j + 2) % 16] + T[j + 2], 17);
-                    b = c + LeftRotate(b + F(c, d, a) + X[(j + 3) % 16] + T[j + 3], 22);
+                    d = a + LeftRotate(d + F(a, b, c) + X[j + 1] + T[j + 1], 12);
+                    c = d + LeftRotate(c + F(d, a, b) + X[j + 2] + T[j + 2], 17);
+                    b = c + LeftRotate(b + F(c, d, a) + X[j + 3] + T[j + 3], 22);
                 }
 
                 // Round 2
-                for (int j = 16; j < 32; j++)
+                for (int j = 0; j < 16; j += 4)
                 {
-                    a = b + LeftRotate(a + G(b, c, d) + X[(5 * j + 1) % 16] + T[j], 5);
-                    d = a + LeftRotate(d + G(a, b, c) + X[(5 * j + 6) % 16] + T[j + 1], 9);
-                    c = d + LeftRotate(c + G(d, a, b) + X[(5 * j + 11) % 16] + T[j + 2], 14);
-                    b = c + LeftRotate(b + G(c, d, a) + X[(5 * j + 0) % 16] + T[j + 3], 20);
+                    a = b + LeftRotate(a + G(b, c, d) + X[(5 * j + 1) % 16] + T[j + 16], 5);
+                    d = a + LeftRotate(d + G(a, b, c) + X[(5 * j + 6) % 16] + T[j + 17], 9);
+                    c = d + LeftRotate(c + G(d, a, b) + X[(5 * j + 11) % 16] + T[j + 18], 14);
+                    b = c + LeftRotate(b + G(c, d, a) + X[(5 * j) % 16] + T[j + 19], 20);
                 }
 
                 // Round 3
-                for (int j = 32; j < 48; j++)
+                for (int j = 0; j < 16; j += 4)
                 {
-                    a = b + LeftRotate(a + H(b, c, d) + X[(3 * j + 5) % 16] + T[j], 4);
-                    d = a + LeftRotate(d + H(a, b, c) + X[(3 * j + 8) % 16] + T[j + 1], 11);
-                    c = d + LeftRotate(c + H(d, a, b) + X[(3 * j + 11) % 16] + T[j + 2], 16);
-                    b = c + LeftRotate(b + H(c, d, a) + X[(3 * j + 14) % 16] + T[j + 3], 23);
+                    a = b + LeftRotate(a + H(b, c, d) + X[(3 * j + 5) % 16] + T[j + 32], 4);
+                    d = a + LeftRotate(d + H(a, b, c) + X[(3 * j + 8) % 16] + T[j + 33], 11);
+                    c = d + LeftRotate(c + H(d, a, b) + X[(3 * j + 11) % 16] + T[j + 34], 16);
+                    b = c + LeftRotate(b + H(c, d, a) + X[(3 * j + 14) % 16] + T[j + 35], 23);
                 }
 
                 // Round 4
-                for (int j = 48; j < 64; j++)
+                for (int j = 0; j < 16; j += 4)
                 {
-                    a = b + LeftRotate(a + I(b, c, d) + X[(7 * j) % 16] + T[j], 6);
-                    d = a + LeftRotate(d + I(a, b, c) + X[(7 * j + 7) % 16] + T[j + 1], 10);
-                    c = d + LeftRotate(c + I(d, a, b) + X[(7 * j + 14) % 16] + T[j + 2], 15);
-                    b = c + LeftRotate(b + I(c, d, a) + X[(7 * j + 21) % 16] + T[j + 3], 21);
+                    a = b + LeftRotate(a + I(b, c, d) + X[(7 * j) % 16] + T[j + 48], 6);
+                    d = a + LeftRotate(d + I(a, b, c) + X[(7 * j + 7) % 16] + T[j + 49], 10);
+                    c = d + LeftRotate(c + I(d, a, b) + X[(7 * j + 14) % 16] + T[j + 50], 15);
+                    b = c + LeftRotate(b + I(c, d, a) + X[(7 * j + 21) % 16] + T[j + 51], 21);
                 }
 
                 a += AA;
