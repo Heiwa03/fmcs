@@ -38,6 +38,31 @@ namespace FMCS
             return blocks;
         }
 
+        private static uint F(uint x, uint y, uint z)
+        {
+            return (x & y) | (~x & z);
+        }
+
+        private static uint G(uint x, uint y, uint z)
+        {
+            return (x & z) | (y & ~z);
+        }
+
+        private static uint H(uint x, uint y, uint z)
+        {
+            return x ^ y ^ z;
+        }
+
+        private static uint I(uint x, uint y, uint z)
+        {
+            return y ^ (x | ~z);
+        }
+
+        private static uint LeftRotate(uint x, int n)
+        {
+            return (x << n) | (x >> (32 - n));
+        }
+        
         
     }
 }
