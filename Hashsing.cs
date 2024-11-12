@@ -26,6 +26,18 @@ namespace FMCS
 
             return message;
         }
+            private static uint[] BreakMessageIntoBlocks(string message)
+        {
+            uint[] blocks = new uint[message.Length / 512];
 
+            for (int i = 0; i < message.Length; i += 512)
+            {
+                blocks[i / 512] = Convert.ToUInt32(message.Substring(i, 512), 2);
+            }
+
+            return blocks;
+        }
+
+        
     }
 }
