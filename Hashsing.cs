@@ -1,9 +1,13 @@
 using System;
 using System.Text;
 
-namespace FMCS
+namespace Hashing
 {
-    class Hashing
+    abstract class HashingAlgorithm
+    {
+        public abstract string Hash(string input);
+    }
+    class MD5 : HashingAlgorithm
     {
         // Pads the message and appends its length
         private static byte[] PadMessageAndAppendLength(byte[] message)
@@ -44,7 +48,7 @@ namespace FMCS
         private static uint LeftRotate(uint x, int n) => (x << n) | (x >> (32 - n));
 
         // Computes the MD5 hash of the input string
-        public static string Hash(string input)
+        public override string Hash(string input)
         {
             // Step 1: Pad the message
             byte[] paddedMessage = PadMessageAndAppendLength(Encoding.UTF8.GetBytes(input));
