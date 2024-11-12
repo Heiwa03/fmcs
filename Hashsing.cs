@@ -26,7 +26,7 @@ namespace FMCS
 
             return message;
         }
-            private static uint[] BreakMessageIntoBlocks(string message)
+        private static uint[] BreakMessageIntoBlocks(string message)
         {
             uint[] blocks = new uint[message.Length / 512];
 
@@ -148,9 +148,9 @@ namespace FMCS
             Buffer.BlockCopy(BitConverter.GetBytes(d), 0, hash, 12, 4);
 
             StringBuilder sb = new StringBuilder();
-            foreach (byte b in hash)
+            foreach (byte octet in hash)
             {
-                sb.Append(b.ToString("x2"));
+                sb.Append(octet.ToString("x2"));
             }
 
             return sb.ToString();
