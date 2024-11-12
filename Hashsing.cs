@@ -5,7 +5,8 @@ namespace FMCS
 {
     class Hashing
     {
-        private static byte[] PadMessage(byte[] message)
+        // Pads the message and appends its length
+        private static byte[] PadMessageAndAppendLength(byte[] message)
         {
             int originalLength = message.Length;
             // Calculate the padding length to make the total length 56 bytes mod 64
@@ -22,6 +23,7 @@ namespace FMCS
             return paddedMessage;
         }
 
+        // Breaks the padded message into 512-bit blocks
         private static uint[] BreakMessageIntoBlocks(byte[] message)
         {
             uint[] blocks = new uint[message.Length / 4];
@@ -32,35 +34,20 @@ namespace FMCS
             return blocks;
         }
 
-        private static uint F(uint x, uint y, uint z)
-        {
-            return (x & y) | (~x & z);
-        }
+        // MD5 auxiliary functions
+        private static uint F(uint x, uint y, uint z) => (x & y) | (~x & z);
+        private static uint G(uint x, uint y, uint z) => (x & z) | (y & ~z);
+        private static uint H(uint x, uint y, uint z) => x ^ y ^ z;
+        private static uint I(uint x, uint y, uint z) => y ^ (x | ~z);
 
-        private static uint G(uint x, uint y, uint z)
-        {
-            return (x & z) | (y & ~z);
-        }
+        // Left rotates a 32-bit integer x by n bits
+        private static uint LeftRotate(uint x, int n) => (x << n) | (x >> (32 - n));
 
-        private static uint H(uint x, uint y, uint z)
-        {
-            return x ^ y ^ z;
-        }
-
-        private static uint I(uint x, uint y, uint z)
-        {
-            return y ^ (x | ~z);
-        }
-
-        private static uint LeftRotate(uint x, int n)
-        {
-            return (x << n) | (x >> (32 - n));
-        }
-        
+        // Computes the MD5 hash of the input string
         public static string Hash(string input)
         {
             // Step 1: Pad the message
-            byte[] paddedMessage = PadMessage(Encoding.UTF8.GetBytes(input));
+            byte[] paddedMessage = PadMessageAndAppendLength(Encoding.UTF8.GetBytes(input));
 
             // Step 2: Break the message into 512-bit blocks
             uint[] blocks = BreakMessageIntoBlocks(paddedMessage);
@@ -125,6 +112,7 @@ namespace FMCS
                     b = c + LeftRotate(b + I(c, d, a) + X[(7 * j + 21) % 16] + T[j + 51], 21);
                 }
 
+                // Add this chunk's hash to result so far
                 a += AA;
                 b += BB;
                 c += CC;
@@ -138,6 +126,7 @@ namespace FMCS
             Buffer.BlockCopy(BitConverter.GetBytes(c), 0, hash, 8, 4);
             Buffer.BlockCopy(BitConverter.GetBytes(d), 0, hash, 12, 4);
 
+            // Convert the hash to a hexadecimal string
             StringBuilder sb = new StringBuilder();
             foreach (byte octet in hash)
             {
