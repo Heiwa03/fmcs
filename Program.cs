@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.Contracts;
 using System.IO;
 using Hashing;
 
@@ -6,21 +7,18 @@ namespace FMCS
 {
     class Program 
     {
+        
+        private const string TargetDir = "./target_test_folder";
         static void Main(string[] args)
         {
             // Example usage of the FileHandler class
             HashingAlgorithm hasher = new MD5();
             try
             {
-                string folderPath = "./target_test_folder";
+                string folderPath = TargetDir;
                 List<string> filePaths = FileHandler.GetFilePaths(folderPath);
                 Console.WriteLine("Files in folder:");
-                foreach (string filePath in filePaths)
-                {
-                    byte[] fileContents = FileHandler.ReadFileAsByteArray(filePath);
-                    Console.WriteLine("File " + filePath + " read successfully. Byte array length: " + fileContents.Length);
-                    Console.WriteLine(hasher.Hash(fileContents));
-                }
+                FileHandler.HashFilesFromList(filePaths, hasher);
             }
             catch (Exception ex)
             {
@@ -68,5 +66,65 @@ namespace FMCS
             string[] filePaths = Directory.GetFiles(folderPath);
             return new List<string>(filePaths);
         }       
+
+        public static void HashFilesFromList(List<string> filePaths, HashingAlgorithm hasher)
+        {
+            foreach (string filePath in filePaths)
+            {
+                byte[] fileContents = ReadFileAsByteArray(filePath);
+                Console.WriteLine("File " + filePath + " read successfully. Byte array length: " + fileContents.Length);
+                Console.WriteLine(hasher.Hash(fileContents));
+            }
+        }
+
+        
+    }
+
+    class RuntimeDirectoryManagement
+    {
+        private const string DirName = ".runtimedir";
+        private const string HashListFileName = "hashlist";
+        public static void CreateDirectory(string directoryPath)
+        {
+            // Check if the directory already exists
+            if (Directory.Exists(directoryPath))
+            {
+                throw new IOException("The specified directory already exists.");
+            }
+
+            // Create the directory
+            Directory.CreateDirectory(directoryPath);
+        }
+
+        public static void DeleteDirectory(string directoryPath)
+        {
+            // Check if the directory exists
+            if (!Directory.Exists(directoryPath))
+            {
+                throw new DirectoryNotFoundException("The specified directory was not found.");
+            }
+
+            // Delete the directory
+            Directory.Delete(directoryPath, true);
+        }
+
+        public static void CreateHashListFile(string directoryPath, string hashListFilePath)
+        {
+            // Check if the directory exists
+            if (!Directory.Exists(directoryPath))
+            {
+                throw new DirectoryNotFoundException("The specified directory was not found.");
+            }
+
+            // Create the hash list file
+            File.Create(hashListFilePath).Close();
+        }
+
+        public static void InitializeDirectory(string targetdir, string directoryPath)
+        {
+            CreateDirectory(targetdir + "/" + directoryPath);
+            CreateHashListFile(targetdir + "/" + directoryPath, targetdir + "/" + directoryPath + "/" + HashListFileName);
+
+        }
     }
 }
