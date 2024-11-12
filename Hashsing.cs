@@ -4,19 +4,19 @@ using System.Text;
 namespace FMCS
 {
     class Hashing
-    {   
-        private const uint A = 0x67452301;
-        private const uint B = 0xefcdab89;
-        private const uint C = 0x98badcfe;
-        private const uint D = 0x10325476;
-
+    {
         private static byte[] PadMessage(byte[] message)
         {
             int originalLength = message.Length;
+            // Calculate the padding length to make the total length 56 bytes mod 64
             int paddingLength = (56 - (originalLength + 1) % 64) % 64;
+            // Create a new byte array with the original message, padding, and length
             byte[] paddedMessage = new byte[originalLength + paddingLength + 9];
+            // Copy the original message to the new array
             Array.Copy(message, paddedMessage, originalLength);
+            // Append the '1' bit (0x80 in hex) to the message
             paddedMessage[originalLength] = 0x80;
+            // Append the length of the original message in bits as a 64-bit number
             ulong messageLengthBits = (ulong)originalLength * 8;
             Array.Copy(BitConverter.GetBytes(messageLengthBits), 0, paddedMessage, paddedMessage.Length - 8, 8);
             return paddedMessage;
@@ -66,10 +66,10 @@ namespace FMCS
             uint[] blocks = BreakMessageIntoBlocks(paddedMessage);
 
             // Step 3: Initialize variables
-            uint a = A;
-            uint b = B;
-            uint c = C;
-            uint d = D;
+            uint a = 0x67452301;
+            uint b = 0xefcdab89;
+            uint c = 0x98badcfe;
+            uint d = 0x10325476;
 
             // Constants for MD5
             uint[] T = new uint[64];
