@@ -14,7 +14,7 @@ namespace FMCS
         {
             string[] commandParts = command.Split(' ', 2);
             string mainCommand = commandParts[0].ToLower();
-            string argument = commandParts.Length > 1 ? commandParts[1] : null;
+            string? argument = commandParts.Length > 1 ? commandParts[1] : null;
 
             switch (mainCommand)
             {
@@ -71,7 +71,7 @@ namespace FMCS
             }
         }
 
-        private static void Info(string filePath)
+        private static void Info(string? filePath)
         {
             try
             {

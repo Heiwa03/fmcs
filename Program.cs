@@ -19,9 +19,12 @@ namespace FMCS
                 // Initialize the directory and hash list file
                 RuntimeDirectoryManagement.InitializeDirectory(TargetDir);
 
-                // Generate initial hashes and store them
-                List<string> filePaths = FileHandler.GetFilePaths(TargetDir);
-                FileHandler.GenerateInitialHashes(filePaths, hasher, TargetDir);
+                // Generate initial hashes and store them if the hash list file does not exist
+                if (!File.Exists(Path.Combine(TargetDir, RuntimeDirectoryManagement.DirName, RuntimeDirectoryManagement.HashListFileName)))
+                {
+                    List<string> filePaths = FileHandler.GetFilePaths(TargetDir);
+                    FileHandler.GenerateInitialHashes(filePaths, hasher, TargetDir);
+                }
 
                 // Set up a timer to run the detection every 5 seconds
                 detectionTimer = new System.Timers.Timer(5000); // 5000 milliseconds = 5 seconds
@@ -32,7 +35,7 @@ namespace FMCS
                 // Keep the application running and handle terminal input
                 Console.WriteLine("Press [Enter] to exit the program.");
                 Console.WriteLine("Enter commands (e.g., 'commit' to update initial keys):");
-                string command;
+                string? command;
                 while ((command = Console.ReadLine()) != null)
                 {
                     CommandHandler.HandleCommand(command);
@@ -139,7 +142,7 @@ namespace FMCS
             // Read the stored hashes from the hash list file
             using (StreamReader reader = new StreamReader(hashListFilePath))
             {
-                string line;
+                string? line;
                 while ((line = reader.ReadLine()) != null)
                 {
                     string[] parts = line.Split(':');
@@ -253,6 +256,13 @@ namespace FMCS
             if (!Directory.Exists(directoryPath))
             {
                 throw new DirectoryNotFoundException("The specified directory was not found.");
+            }
+
+            // Check if the hash list file already exists
+            if (File.Exists(hashListFilePath))
+            {
+                Console.WriteLine("The hash list file already exists: " + hashListFilePath);
+                return;
             }
 
             // Create the hash list file
