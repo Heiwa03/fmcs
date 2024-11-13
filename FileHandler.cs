@@ -6,7 +6,7 @@ using Hashing;
 
 namespace FMCS
 {
-    class FileHandler
+    public static class FileHandler
     {
         // Method to read a file and return its contents as a byte array
         public static async Task<byte[]> ReadFileAsByteArrayAsync(string filePath)

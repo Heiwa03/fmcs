@@ -58,11 +58,18 @@ namespace FMCS
 
         private static void StartAutoDetectionThread()
         {
-            Thread autoDetectionThread = new Thread(() =>
+            if (detectionTimer != null)
             {
-                detectionTimer.Start();
-            });
-            autoDetectionThread.Start();
+                Thread autoDetectionThread = new Thread(() =>
+                {
+                    detectionTimer.Start();
+                });
+                autoDetectionThread.Start();
+            }
+            else
+            {
+                Console.WriteLine("Detection timer is not initialized.");
+            }
         }
 
         private static async Task StartTerminalPromptAsync()
