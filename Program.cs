@@ -1,3 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Timers;
+using System.Threading;
+using System.Threading.Tasks;
 using Hashing;
 
 namespace FMCS
@@ -16,25 +22,13 @@ namespace FMCS
                 Initialize();
 
                 // Set up a timer to run the detection every 5 seconds
-                detectionTimer = new System.Timers.Timer(DetectionInterval);
-                detectionTimer.Elapsed += async (sender, e) => await RunDetectionAsync(false);
-                detectionTimer.AutoReset = true;
+                SetupDetectionTimer();
 
                 // Start the auto-detection on a separate thread
-                Thread autoDetectionThread = new Thread(() =>
-                {
-                    detectionTimer.Start();
-                });
-                autoDetectionThread.Start();
+                StartAutoDetectionThread();
 
                 // Start the terminal prompt on the main thread
-                CommandHandler commandHandler = new CommandHandler(Hasher);
-                commandHandler.PrintInitialPrompt();
-                string? command;
-                while ((command = Console.ReadLine()) != null)
-                {
-                    await commandHandler.HandleCommandAsync(command);
-                }
+                await StartTerminalPromptAsync();
             }
             catch (Exception ex)
             {
@@ -52,6 +46,33 @@ namespace FMCS
             {
                 List<string> filePaths = FileHandler.GetFilePaths(TargetDir);
                 FileHandler.GenerateInitialHashes(filePaths, Hasher, TargetDir);
+            }
+        }
+
+        private static void SetupDetectionTimer()
+        {
+            detectionTimer = new System.Timers.Timer(DetectionInterval);
+            detectionTimer.Elapsed += async (sender, e) => await RunDetectionAsync(false);
+            detectionTimer.AutoReset = true;
+        }
+
+        private static void StartAutoDetectionThread()
+        {
+            Thread autoDetectionThread = new Thread(() =>
+            {
+                detectionTimer.Start();
+            });
+            autoDetectionThread.Start();
+        }
+
+        private static async Task StartTerminalPromptAsync()
+        {
+            CommandHandler commandHandler = new CommandHandler(Hasher);
+            commandHandler.PrintInitialPrompt();
+            string? command;
+            while ((command = Console.ReadLine()) != null)
+            {
+                await commandHandler.HandleCommandAsync(command);
             }
         }
 
