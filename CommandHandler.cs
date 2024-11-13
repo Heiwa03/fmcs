@@ -1,68 +1,33 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using Hashing;
 
 namespace FMCS
 {
-    class CommandHandler
+    public abstract class Command
     {
-        private static HashingAlgorithm hasher = new MD5();
-        private const string TargetDir = "./target_test_folder";
+        protected HashingAlgorithm Hasher;
 
-        public static void HandleCommand(string command)
+        protected Command(HashingAlgorithm hasher)
         {
-            string[] commandParts = command.Split(' ', 2);
-            string mainCommand = commandParts[0].ToLower();
-            string? argument = commandParts.Length > 1 ? commandParts[1] : null;
-
-            switch (mainCommand)
-            {
-                case "commit":
-                    Commit();
-                    break;
-                case "status":
-                    Status();
-                    break;
-                case "info":
-                    Info(argument);
-                    break;
-                case "help":
-                    PrintPossibleCommands();
-                    break;
-                case "exit":
-                    Environment.Exit(0);
-                    break;
-                default:
-                    Console.WriteLine("Unknown command: " + mainCommand);
-                    break;
-            }
+            Hasher = hasher;
         }
 
-        public static void PrintPossibleCommands()
-        {
-            Console.WriteLine("Possible commands:");
-            Console.WriteLine("commit - Commit the current state of the target directory");
-            Console.WriteLine("status - Check for changes in the target directory");
-            Console.WriteLine("info <path_to_file> - Get information about a file");
-            Console.WriteLine("exit - Exit the program");
-        }
+        public abstract void Execute(string? argument);
+    }
 
-        public static void PrintInitialPrompt()
-        {
-            Console.WriteLine("Enter commands (e.g., 'commit' to update initial keys):");
-        }
-        
-        private static void Commit()
+    public class CommitCommand : Command
+    {
+        public CommitCommand(HashingAlgorithm hasher) : base(hasher) { }
+
+        public override void Execute(string? argument)
         {
             try
             {
                 // Initialize the directory and hash list file
-                RuntimeDirectoryManagement.InitializeDirectory(TargetDir);
+                RuntimeDirectoryManagement.InitializeDirectory(Program.TargetDir);
 
                 // Generate initial hashes and store them
-                List<string> filePaths = FileHandler.GetFilePaths(TargetDir);
-                FileHandler.GenerateInitialHashes(filePaths, hasher, TargetDir);
+                List<string> filePaths = FileHandler.GetFilePaths(Program.TargetDir);
+                FileHandler.GenerateInitialHashes(filePaths, Hasher, Program.TargetDir);
 
                 Console.WriteLine("Initial keys updated successfully.");
 
@@ -74,8 +39,13 @@ namespace FMCS
                 Console.WriteLine("An error occurred during commit: " + ex.Message);
             }
         }
+    }
 
-        private static void Status()
+    public class StatusCommand : Command
+    {
+        public StatusCommand(HashingAlgorithm hasher) : base(hasher) { }
+
+        public override void Execute(string? argument)
         {
             try
             {
@@ -87,33 +57,48 @@ namespace FMCS
                 Console.WriteLine("An error occurred during status check: " + ex.Message);
             }
         }
+    }
 
-        private static void Info(string? filePath)
+    public class ExitCommand : Command 
+    {
+        public ExitCommand(HashingAlgorithm hasher) : base(hasher) { }
+
+        public override void Execute(string? argument)
+        {
+            Environment.Exit(0);
+        }
+    }
+
+    public class InfoCommand : Command
+    {
+        public InfoCommand(HashingAlgorithm hasher) : base(hasher) { }
+
+        public override void Execute(string? argument)
         {
             try
             {
-                if (string.IsNullOrEmpty(filePath))
+                if (string.IsNullOrEmpty(argument))
                 {
                     Console.WriteLine("Usage: info <path_to_file>");
                     return;
                 }
 
-                if (!File.Exists(filePath))
+                if (!File.Exists(argument))
                 {
-                    Console.WriteLine("File not found: " + filePath);
+                    Console.WriteLine("File not found: " + argument);
                     return;
                 }
 
-                FileInfo fileInfo = new FileInfo(filePath);
+                FileInfo fileInfo = new FileInfo(argument);
                 Console.WriteLine("File: " + fileInfo.FullName);
                 Console.WriteLine("Size: " + fileInfo.Length + " bytes");
                 Console.WriteLine("Created: " + fileInfo.CreationTime);
                 Console.WriteLine("Modified: " + fileInfo.LastWriteTime);
-                Console.WriteLine("Hash: " + hasher.Hash(FileHandler.ReadFileAsByteArray(filePath)));
+                Console.WriteLine("Hash: " + Hasher.Hash(FileHandler.ReadFileAsByteArray(argument)));
 
                 if (fileInfo.Extension.Equals(".txt", StringComparison.OrdinalIgnoreCase))
                 {
-                    string fileContent = FileHandler.ReadFileAsString(filePath);
+                    string fileContent = FileHandler.ReadFileAsString(argument);
                     int lineCount = fileContent.Split('\n').Length;
                     int wordCount = fileContent.Split(new char[] { ' ', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries).Length;
                     int charCount = fileContent.Length;
@@ -123,22 +108,17 @@ namespace FMCS
                     Console.WriteLine("Character Count: " + charCount);
                 }
                 else if (fileInfo.Extension.Equals(".png", StringComparison.OrdinalIgnoreCase) ||
-                        fileInfo.Extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
-                        fileInfo.Extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase))
+                         fileInfo.Extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+                         fileInfo.Extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase))
                 {
-                    using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    using (var image = Aspose.Drawing.Image.FromFile(argument))
                     {
-                        using (var image = Aspose.Drawing.Image.FromStream(fileStream))
-                        {       
-                            var height = image.Height;
-                            var width = image.Width;
-                            Console.WriteLine("Resolution: " + width + "x" + height);
-                        }
+                        Console.WriteLine("Resolution: " + image.Width + "x" + image.Height);
                     }
                 }
                 else if (fileInfo.Extension.Equals(".cs", StringComparison.OrdinalIgnoreCase))
                 {
-                    string[] lines = FileHandler.ReadFileAsString(filePath).Split('\n');
+                    string[] lines = FileHandler.ReadFileAsString(argument).Split('\n');
                     int lineCount = lines.Length;
                     int classCount = 0;
                     int methodCount = 0;
@@ -151,8 +131,8 @@ namespace FMCS
                             classCount++;
                         }
                         else if (trimmedLine.Contains("(") && trimmedLine.Contains(")") && 
-                                (trimmedLine.Contains("public ") || trimmedLine.Contains("private ") || 
-                                trimmedLine.Contains("protected ") || trimmedLine.Contains("internal ")))
+                                 (trimmedLine.Contains("public ") || trimmedLine.Contains("private ") || 
+                                  trimmedLine.Contains("protected ") || trimmedLine.Contains("internal ")))
                         {
                             methodCount++;
                         }
@@ -167,6 +147,44 @@ namespace FMCS
             {
                 Console.WriteLine("An error occurred during info retrieval: " + ex.Message);
             }
+        }
+    }
+
+    public class CommandHandler
+    {
+        private readonly Dictionary<string, Command> Commands;
+
+        public CommandHandler(HashingAlgorithm hasher)
+        {
+            Commands = new Dictionary<string, Command>
+            {
+                { "commit", new CommitCommand(hasher) },
+                { "status", new StatusCommand(hasher) },
+                { "info", new InfoCommand(hasher) },
+                { "exit", new ExitCommand(hasher) }
+            };
+        }
+
+        public void HandleCommand(string command)
+        {
+            string[] commandParts = command.Split(' ', 2);
+            string mainCommand = commandParts[0].ToLower();
+            string? argument = commandParts.Length > 1 ? commandParts[1] : null;
+
+            if (Commands.ContainsKey(mainCommand))
+            {
+                Commands[mainCommand].Execute(argument);
+            }
+            else
+            {
+                Console.WriteLine("Unknown command: " + mainCommand);
+            }
+        }
+
+        public void PrintInitialPrompt()
+        {
+            Console.WriteLine("Press [Enter] to exit the program.");
+            Console.WriteLine("Enter commands (e.g., 'commit' to update initial keys):");
         }
     }
 }

@@ -1,13 +1,12 @@
-using System;
 using System.Text;
 
 namespace Hashing
 {
-    abstract class HashingAlgorithm
+    public abstract class HashingAlgorithm
     {
         public abstract string Hash(byte[] input);
     }
-    class MD5 : HashingAlgorithm
+    public class MD5 : HashingAlgorithm
     {
         // Pads the message and appends its length
         private static byte[] PadMessageAndAppendLength(byte[] message)
