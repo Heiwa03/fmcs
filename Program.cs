@@ -21,7 +21,14 @@ namespace FMCS
                 detectionTimer.AutoReset = true;
                 detectionTimer.Enabled = true;
 
-                // Keep the application running and handle terminal input
+                // Start the auto-detection on a separate thread
+                Thread autoDetectionThread = new Thread(() =>
+                {
+                    detectionTimer.Start();
+                });
+                autoDetectionThread.Start();
+
+                // Start the terminal prompt on the main thread
                 CommandHandler commandHandler = new CommandHandler(Hasher);
                 commandHandler.PrintInitialPrompt();
                 string? command;
