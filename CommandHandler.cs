@@ -27,6 +27,9 @@ namespace FMCS
                 case "info":
                     Info(argument);
                     break;
+                case "help":
+                    PrintPossibleCommands();
+                    break;
                 case "exit":
                     Environment.Exit(0);
                     break;
@@ -36,6 +39,20 @@ namespace FMCS
             }
         }
 
+        public static void PrintPossibleCommands()
+        {
+            Console.WriteLine("Possible commands:");
+            Console.WriteLine("commit - Commit the current state of the target directory");
+            Console.WriteLine("status - Check for changes in the target directory");
+            Console.WriteLine("info <path_to_file> - Get information about a file");
+            Console.WriteLine("exit - Exit the program");
+        }
+
+        public static void PrintInitialPrompt()
+        {
+            Console.WriteLine("Enter commands (e.g., 'commit' to update initial keys):");
+        }
+        
         private static void Commit()
         {
             try
@@ -93,6 +110,32 @@ namespace FMCS
                 Console.WriteLine("Created: " + fileInfo.CreationTime);
                 Console.WriteLine("Modified: " + fileInfo.LastWriteTime);
                 Console.WriteLine("Hash: " + hasher.Hash(FileHandler.ReadFileAsByteArray(filePath)));
+
+                if (fileInfo.Extension.Equals(".txt", StringComparison.OrdinalIgnoreCase))
+                {
+                    string fileContent = FileHandler.ReadFileAsString(filePath);
+                    int lineCount = fileContent.Split('\n').Length;
+                    int wordCount = fileContent.Split(new char[] { ' ', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries).Length;
+                    int charCount = fileContent.Length;
+
+                    Console.WriteLine("Line Count: " + lineCount);
+                    Console.WriteLine("Word Count: " + wordCount);
+                    Console.WriteLine("Character Count: " + charCount);
+                }
+                else if (fileInfo.Extension.Equals(".png", StringComparison.OrdinalIgnoreCase) ||
+                        fileInfo.Extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+                        fileInfo.Extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase))
+                {
+                    using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        using (var image = Aspose.Drawing.Image.FromStream(fileStream))
+                        {       
+                            var height = image.Height;
+                            var width = image.Width;
+                            Console.WriteLine("Resolution: " + width + "x" + height);
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {

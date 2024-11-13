@@ -9,6 +9,7 @@ namespace FMCS
     class Program 
     {
         private const string TargetDir = "./target_test_folder";
+        private const double DetectionInterval = 5000; // 5000 milliseconds = 5 seconds
         private static System.Timers.Timer detectionTimer;
         private static HashingAlgorithm hasher = new MD5();
 
@@ -27,14 +28,13 @@ namespace FMCS
                 }
 
                 // Set up a timer to run the detection every 5 seconds
-                detectionTimer = new System.Timers.Timer(5000); // 5000 milliseconds = 5 seconds
+                detectionTimer = new System.Timers.Timer(DetectionInterval);
                 detectionTimer.Elapsed += (sender, e) => RunDetection(false);
                 detectionTimer.AutoReset = true;
                 detectionTimer.Enabled = true;
 
                 // Keep the application running and handle terminal input
-                Console.WriteLine("Press [Enter] to exit the program.");
-                Console.WriteLine("Enter commands (e.g., 'commit' to update initial keys):");
+                CommandHandler.PrintInitialPrompt();
                 string? command;
                 while ((command = Console.ReadLine()) != null)
                 {
