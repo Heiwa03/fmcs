@@ -136,6 +136,32 @@ namespace FMCS
                         }
                     }
                 }
+                else if (fileInfo.Extension.Equals(".cs", StringComparison.OrdinalIgnoreCase))
+                {
+                    string[] lines = FileHandler.ReadFileAsString(filePath).Split('\n');
+                    int lineCount = lines.Length;
+                    int classCount = 0;
+                    int methodCount = 0;
+
+                    foreach (string line in lines)
+                    {
+                        string trimmedLine = line.Trim();
+                        if (trimmedLine.StartsWith("class "))
+                        {
+                            classCount++;
+                        }
+                        else if (trimmedLine.Contains("(") && trimmedLine.Contains(")") && 
+                                (trimmedLine.Contains("public ") || trimmedLine.Contains("private ") || 
+                                trimmedLine.Contains("protected ") || trimmedLine.Contains("internal ")))
+                        {
+                            methodCount++;
+                        }
+                    }
+
+                    Console.WriteLine("Line Count: " + lineCount);
+                    Console.WriteLine("Class Count: " + classCount);
+                    Console.WriteLine("Method Count: " + methodCount);
+                }
             }
             catch (Exception ex)
             {
