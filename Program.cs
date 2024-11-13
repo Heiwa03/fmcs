@@ -1,13 +1,9 @@
-using System;
-using System.Diagnostics.Contracts;
-using System.IO;
 using Hashing;
 
 namespace FMCS
 {
     class Program 
     {
-        
         private const string TargetDir = "./target_test_folder";
         static void Main(string[] args)
         {
@@ -15,10 +11,15 @@ namespace FMCS
             HashingAlgorithm hasher = new MD5();
             try
             {
-                string folderPath = TargetDir;
-                List<string> filePaths = FileHandler.GetFilePaths(folderPath);
-                Console.WriteLine("Files in folder:");
-                FileHandler.HashFilesFromList(filePaths, hasher);
+                // Initialize the directory and hash list file
+                 
+
+                // Generate initial hashes and store them
+                List<string> filePaths = FileHandler.GetFilePaths(TargetDir);
+                FileHandler.GenerateInitialHashes(filePaths, hasher, TargetDir);
+
+                // Detect changes in the directory
+                FileHandler.DetectChanges(filePaths, hasher, TargetDir);
             }
             catch (Exception ex)
             {
@@ -42,6 +43,7 @@ namespace FMCS
             return File.ReadAllBytes(filePath);
         }
 
+        // Method to read a file and return its contents as a string
         public static string ReadFileAsString(string filePath)
         {
             // Check if the file exists
@@ -54,6 +56,7 @@ namespace FMCS
             return File.ReadAllText(filePath);
         }
 
+        // Method to get all file paths in a specified folder
         public static List<string> GetFilePaths(string folderPath)
         {
             // Check if the folder exists
@@ -65,35 +68,94 @@ namespace FMCS
             // Get all file paths in the folder
             string[] filePaths = Directory.GetFiles(folderPath);
             return new List<string>(filePaths);
-        }       
+        }
 
-        public static void HashFilesFromList(List<string> filePaths, HashingAlgorithm hasher)
+        // Method to generate initial hashes and store them in the hash list file
+        public static void GenerateInitialHashes(List<string> filePaths, HashingAlgorithm hasher, string targetDir)
         {
-            foreach (string filePath in filePaths)
+            string hashListFilePath = targetDir + "/" + RuntimeDirectoryManagement.DirName + "/" + RuntimeDirectoryManagement.HashListFileName;
+            using (StreamWriter writer = new StreamWriter(hashListFilePath))
             {
-                byte[] fileContents = ReadFileAsByteArray(filePath);
-                Console.WriteLine("File " + filePath + " read successfully. Byte array length: " + fileContents.Length);
-                Console.WriteLine(hasher.Hash(fileContents));
+                foreach (string filePath in filePaths)
+                {
+                    byte[] fileContents = ReadFileAsByteArray(filePath);
+                    string hash = hasher.Hash(fileContents);
+                    writer.WriteLine(filePath + ":" + hash);
+                }
             }
         }
 
-        
+        // Method to detect changes in the directory
+        public static void DetectChanges(List<string> filePaths, HashingAlgorithm hasher, string targetDir)
+        {
+            string hashListFilePath = targetDir + "/" + RuntimeDirectoryManagement.DirName + "/" + RuntimeDirectoryManagement.HashListFileName;
+            Dictionary<string, string> storedHashes = new Dictionary<string, string>();
+
+            // Read the stored hashes from the hash list file
+            using (StreamReader reader = new StreamReader(hashListFilePath))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    string[] parts = line.Split(':');
+                    if (parts.Length == 2)
+                    {
+                        storedHashes[parts[0]] = parts[1];
+                    }
+                }
+            }
+
+            // Compute the current hashes and compare with the stored hashes
+            foreach (string filePath in filePaths)
+            {
+                byte[] fileContents = ReadFileAsByteArray(filePath);
+                string currentHash = hasher.Hash(fileContents);
+
+                if (storedHashes.ContainsKey(filePath))
+                {
+                    if (storedHashes[filePath] != currentHash)
+                    {
+                        Console.WriteLine("File changed: " + filePath);
+                    }
+                    else
+                    {
+                        Console.WriteLine("DEBUG:File unchanged: " + filePath);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("New file detected: " + filePath);
+                }
+            }
+
+            // Check for deleted files
+            foreach (string storedFilePath in storedHashes.Keys)
+            {
+                if (!filePaths.Contains(storedFilePath))
+                {
+                    Console.WriteLine("File deleted: " + storedFilePath);
+                }
+            }
+        }
     }
 
     class RuntimeDirectoryManagement
     {
-        private const string DirName = ".runtimedir";
-        private const string HashListFileName = "hashlist";
+        public const string DirName = ".runtimedir";
+        public const string HashListFileName = "hashlist";
+
         public static void CreateDirectory(string directoryPath)
         {
             // Check if the directory already exists
             if (Directory.Exists(directoryPath))
             {
-                throw new IOException("The specified directory already exists.");
+                Console.WriteLine("The specified directory already exists: " + directoryPath);
+                return;
             }
 
             // Create the directory
             Directory.CreateDirectory(directoryPath);
+            Console.WriteLine("Directory created: " + directoryPath);
         }
 
         public static void DeleteDirectory(string directoryPath)
@@ -120,11 +182,11 @@ namespace FMCS
             File.Create(hashListFilePath).Close();
         }
 
-        public static void InitializeDirectory(string targetdir, string directoryPath)
+        public static void InitializeDirectory(string targetDir)
         {
-            CreateDirectory(targetdir + "/" + directoryPath);
-            CreateHashListFile(targetdir + "/" + directoryPath, targetdir + "/" + directoryPath + "/" + HashListFileName);
-
+            string runtimeDirPath = targetDir + "/" + DirName;
+            CreateDirectory(runtimeDirPath);
+            CreateHashListFile(runtimeDirPath, runtimeDirPath + "/" + HashListFileName);
         }
     }
 }
