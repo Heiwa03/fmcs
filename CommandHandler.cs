@@ -38,6 +38,9 @@ namespace FMCS
                 FileHandler.GenerateInitialHashes(filePaths, hasher, TargetDir);
 
                 Console.WriteLine("Initial keys updated successfully.");
+
+                // Run detection manually to print the status
+                Program.RunDetection(true);
             }
             catch (Exception ex)
             {
@@ -50,8 +53,7 @@ namespace FMCS
             try
             {
                 Console.WriteLine("Checking for changes...");
-                List<string> filePaths = FileHandler.GetFilePaths(TargetDir);
-                FileHandler.DetectChanges(filePaths, hasher, TargetDir);
+                Program.RunDetection(true);
             }
             catch (Exception ex)
             {

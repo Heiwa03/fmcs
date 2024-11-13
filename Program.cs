@@ -25,7 +25,7 @@ namespace FMCS
 
                 // Set up a timer to run the detection every 5 seconds
                 detectionTimer = new System.Timers.Timer(5000); // 5000 milliseconds = 5 seconds
-                detectionTimer.Elapsed += (sender, e) => RunDetection();
+                detectionTimer.Elapsed += (sender, e) => RunDetection(false);
                 detectionTimer.AutoReset = true;
                 detectionTimer.Enabled = true;
 
@@ -44,13 +44,26 @@ namespace FMCS
             }
         }
 
-        private static void RunDetection()
+        public static void RunDetection(bool isManual)
         {
             try
             {
-                Console.WriteLine("Running detection...");
+                if (isManual)
+                {
+                    Console.WriteLine("Running detection...");
+                }
+
                 List<string> filePaths = FileHandler.GetFilePaths(TargetDir);
-                FileHandler.DetectChanges(filePaths, hasher, TargetDir);
+                List<string> changes = FileHandler.DetectChanges(filePaths, hasher, TargetDir, isManual);
+
+                if (!isManual && changes.Count > 0)
+                {
+                    Console.WriteLine("Changes detected:");
+                    foreach (var change in changes)
+                    {
+                        Console.WriteLine(change);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -117,10 +130,11 @@ namespace FMCS
         }
 
         // Method to detect changes in the directory
-        public static void DetectChanges(List<string> filePaths, HashingAlgorithm hasher, string targetDir)
+        public static List<string> DetectChanges(List<string> filePaths, HashingAlgorithm hasher, string targetDir, bool isManual)
         {
             string hashListFilePath = targetDir + "/" + RuntimeDirectoryManagement.DirName + "/" + RuntimeDirectoryManagement.HashListFileName;
             Dictionary<string, string> storedHashes = new Dictionary<string, string>();
+            List<string> changes = new List<string>();
 
             // Read the stored hashes from the hash list file
             using (StreamReader reader = new StreamReader(hashListFilePath))
@@ -149,20 +163,34 @@ namespace FMCS
                 {
                     if (storedHashes[filePath] != currentHash)
                     {
-                        Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine("File changed: " + filePath);
-                        Console.ResetColor();
+                        if (isManual)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Green;
+                            Console.WriteLine("File changed: " + filePath);
+                            Console.ResetColor();
+                        }
+                        else
+                        {
+                            changes.Add("File changed: " + filePath);
+                        }
                     }
-                    else
+                    else if (isManual)
                     {
                         Console.WriteLine("File unchanged: " + filePath);
                     }
                 }
                 else
                 {
-                    Console.ForegroundColor = ConsoleColor.Blue;
-                    Console.WriteLine("New file detected: " + filePath);
-                    Console.ResetColor();
+                    if (isManual)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Blue;
+                        Console.WriteLine("New file detected: " + filePath);
+                        Console.ResetColor();
+                    }
+                    else
+                    {
+                        changes.Add("New file detected: " + filePath);
+                    }
                 }
             }
 
@@ -171,11 +199,20 @@ namespace FMCS
             {
                 if (!currentFilePaths.Contains(storedFilePath))
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("File deleted: " + storedFilePath);
-                    Console.ResetColor();
+                    if (isManual)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("File deleted: " + storedFilePath);
+                        Console.ResetColor();
+                    }
+                    else
+                    {
+                        changes.Add("File deleted: " + storedFilePath);
+                    }
                 }
             }
+
+            return changes;
         }
     }
 
