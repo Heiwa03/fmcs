@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Timers;
 using Hashing;
 
 namespace FMCS
@@ -5,25 +9,46 @@ namespace FMCS
     class Program 
     {
         private const string TargetDir = "./target_test_folder";
+        private static System.Timers.Timer detectionTimer;
+        private static HashingAlgorithm hasher = new MD5();
+
         static void Main(string[] args)
         {
-            // Example usage of the FileHandler class
-            HashingAlgorithm hasher = new MD5();
             try
             {
                 // Initialize the directory and hash list file
-                 
+                RuntimeDirectoryManagement.InitializeDirectory(TargetDir);
 
                 // Generate initial hashes and store them
                 List<string> filePaths = FileHandler.GetFilePaths(TargetDir);
                 FileHandler.GenerateInitialHashes(filePaths, hasher, TargetDir);
 
-                // Detect changes in the directory
-                FileHandler.DetectChanges(filePaths, hasher, TargetDir);
+                // Set up a timer to run the detection every 5 seconds
+                detectionTimer = new System.Timers.Timer(5000); // 5000 milliseconds = 5 seconds
+                detectionTimer.Elapsed += (sender, e) => RunDetection(filePaths);
+                detectionTimer.AutoReset = true;
+                detectionTimer.Enabled = true;
+
+                // Keep the application running
+                Console.WriteLine("Press [Enter] to exit the program.");
+                Console.ReadLine();
             }
             catch (Exception ex)
             {
                 Console.WriteLine("An error occurred: " + ex.Message);
+            }
+        }
+
+        private static void RunDetection(List<string> filePaths)
+        {
+            try
+            {
+                Console.WriteLine("Running detection...");
+                FileHandler.DetectChanges(filePaths, hasher, TargetDir);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("An error occurred during detection: " + ex.Message);
             }
         }
     }
@@ -119,7 +144,7 @@ namespace FMCS
                     }
                     else
                     {
-                        Console.WriteLine("DEBUG:File unchanged: " + filePath);
+                        Console.WriteLine("DEBUG: File unchanged: " + filePath);
                     }
                 }
                 else
