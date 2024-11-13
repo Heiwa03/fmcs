@@ -25,13 +25,18 @@ namespace FMCS
 
                 // Set up a timer to run the detection every 5 seconds
                 detectionTimer = new System.Timers.Timer(5000); // 5000 milliseconds = 5 seconds
-                detectionTimer.Elapsed += (sender, e) => RunDetection(filePaths);
+                detectionTimer.Elapsed += (sender, e) => RunDetection();
                 detectionTimer.AutoReset = true;
                 detectionTimer.Enabled = true;
 
-                // Keep the application running
+                // Keep the application running and handle terminal input
                 Console.WriteLine("Press [Enter] to exit the program.");
-                Console.ReadLine();
+                Console.WriteLine("Enter commands (e.g., 'commit' to update initial keys):");
+                string command;
+                while ((command = Console.ReadLine()) != null)
+                {
+                    CommandHandler.HandleCommand(command);
+                }
             }
             catch (Exception ex)
             {
@@ -39,11 +44,12 @@ namespace FMCS
             }
         }
 
-        private static void RunDetection(List<string> filePaths)
+        private static void RunDetection()
         {
             try
             {
                 Console.WriteLine("Running detection...");
+                List<string> filePaths = FileHandler.GetFilePaths(TargetDir);
                 FileHandler.DetectChanges(filePaths, hasher, TargetDir);
             }
             catch (Exception ex)
@@ -130,8 +136,11 @@ namespace FMCS
                 }
             }
 
+            // Refresh the list of file paths
+            List<string> currentFilePaths = GetFilePaths(targetDir);
+
             // Compute the current hashes and compare with the stored hashes
-            foreach (string filePath in filePaths)
+            foreach (string filePath in currentFilePaths)
             {
                 byte[] fileContents = ReadFileAsByteArray(filePath);
                 string currentHash = hasher.Hash(fileContents);
@@ -140,25 +149,31 @@ namespace FMCS
                 {
                     if (storedHashes[filePath] != currentHash)
                     {
+                        Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine("File changed: " + filePath);
+                        Console.ResetColor();
                     }
                     else
                     {
-                        Console.WriteLine("DEBUG: File unchanged: " + filePath);
+                        Console.WriteLine("File unchanged: " + filePath);
                     }
                 }
                 else
                 {
+                    Console.ForegroundColor = ConsoleColor.Blue;
                     Console.WriteLine("New file detected: " + filePath);
+                    Console.ResetColor();
                 }
             }
 
             // Check for deleted files
             foreach (string storedFilePath in storedHashes.Keys)
             {
-                if (!filePaths.Contains(storedFilePath))
+                if (!currentFilePaths.Contains(storedFilePath))
                 {
+                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("File deleted: " + storedFilePath);
+                    Console.ResetColor();
                 }
             }
         }
