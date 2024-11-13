@@ -12,7 +12,11 @@ namespace FMCS
 
         public static void HandleCommand(string command)
         {
-            switch (command.ToLower())
+            string[] commandParts = command.Split(' ', 2);
+            string mainCommand = commandParts[0].ToLower();
+            string argument = commandParts.Length > 1 ? commandParts[1] : null;
+
+            switch (mainCommand)
             {
                 case "commit":
                     Commit();
@@ -20,8 +24,14 @@ namespace FMCS
                 case "status":
                     Status();
                     break;
+                case "info":
+                    Info(argument);
+                    break;
+                case "exit":
+                    Environment.Exit(0);
+                    break;
                 default:
-                    Console.WriteLine("Unknown command: " + command);
+                    Console.WriteLine("Unknown command: " + mainCommand);
                     break;
             }
         }
@@ -58,6 +68,35 @@ namespace FMCS
             catch (Exception ex)
             {
                 Console.WriteLine("An error occurred during status check: " + ex.Message);
+            }
+        }
+
+        private static void Info(string filePath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(filePath))
+                {
+                    Console.WriteLine("Usage: info <path_to_file>");
+                    return;
+                }
+
+                if (!File.Exists(filePath))
+                {
+                    Console.WriteLine("File not found: " + filePath);
+                    return;
+                }
+
+                FileInfo fileInfo = new FileInfo(filePath);
+                Console.WriteLine("File: " + fileInfo.FullName);
+                Console.WriteLine("Size: " + fileInfo.Length + " bytes");
+                Console.WriteLine("Created: " + fileInfo.CreationTime);
+                Console.WriteLine("Modified: " + fileInfo.LastWriteTime);
+                Console.WriteLine("Hash: " + hasher.Hash(FileHandler.ReadFileAsByteArray(filePath)));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("An error occurred during info retrieval: " + ex.Message);
             }
         }
     }
