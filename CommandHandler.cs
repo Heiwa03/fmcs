@@ -11,14 +11,14 @@ namespace FMCS
             Hasher = hasher;
         }
 
-        public abstract void Execute(string? argument);
+        public abstract Task ExecuteAsync(string? argument);
     }
 
     public class CommitCommand : Command
     {
         public CommitCommand(HashingAlgorithm hasher) : base(hasher) { }
 
-        public override void Execute(string? argument)
+        public override async Task ExecuteAsync(string? argument)
         {
             try
             {
@@ -32,7 +32,7 @@ namespace FMCS
                 Console.WriteLine("Initial keys updated successfully.");
 
                 // Run detection manually to print the status
-                Program.RunDetection(true);
+                await Program.RunDetectionAsync(true);
             }
             catch (Exception ex)
             {
@@ -45,12 +45,12 @@ namespace FMCS
     {
         public StatusCommand(HashingAlgorithm hasher) : base(hasher) { }
 
-        public override void Execute(string? argument)
+        public override async Task ExecuteAsync(string? argument)
         {
             try
             {
                 Console.WriteLine("Checking for changes...");
-                Program.RunDetection(true);
+                await Program.RunDetectionAsync(true);
             }
             catch (Exception ex)
             {
@@ -59,21 +59,11 @@ namespace FMCS
         }
     }
 
-    public class ExitCommand : Command 
-    {
-        public ExitCommand(HashingAlgorithm hasher) : base(hasher) { }
-
-        public override void Execute(string? argument)
-        {
-            Environment.Exit(0);
-        }
-    }
-
     public class InfoCommand : Command
     {
         public InfoCommand(HashingAlgorithm hasher) : base(hasher) { }
 
-        public override void Execute(string? argument)
+        public override async Task ExecuteAsync(string? argument)
         {
             try
             {
@@ -94,11 +84,11 @@ namespace FMCS
                 Console.WriteLine("Size: " + fileInfo.Length + " bytes");
                 Console.WriteLine("Created: " + fileInfo.CreationTime);
                 Console.WriteLine("Modified: " + fileInfo.LastWriteTime);
-                Console.WriteLine("Hash: " + Hasher.Hash(FileHandler.ReadFileAsByteArray(argument)));
+                Console.WriteLine("Hash: " + Hasher.Hash(await FileHandler.ReadFileAsByteArrayAsync(argument)));
 
                 if (fileInfo.Extension.Equals(".txt", StringComparison.OrdinalIgnoreCase))
                 {
-                    string fileContent = FileHandler.ReadFileAsString(argument);
+                    string fileContent = await FileHandler.ReadFileAsStringAsync(argument);
                     int lineCount = fileContent.Split('\n').Length;
                     int wordCount = fileContent.Split(new char[] { ' ', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries).Length;
                     int charCount = fileContent.Length;
@@ -118,7 +108,8 @@ namespace FMCS
                 }
                 else if (fileInfo.Extension.Equals(".cs", StringComparison.OrdinalIgnoreCase))
                 {
-                    string[] lines = FileHandler.ReadFileAsString(argument).Split('\n');
+                    string fileContent = await FileHandler.ReadFileAsStringAsync(argument);
+                    string[] lines = fileContent.Split('\n');
                     int lineCount = lines.Length;
                     int classCount = 0;
                     int methodCount = 0;
@@ -150,6 +141,18 @@ namespace FMCS
         }
     }
 
+    public class ExitCommand : Command
+    {
+        public ExitCommand(HashingAlgorithm hasher) : base(hasher) { }
+
+        public override Task ExecuteAsync(string? argument)
+        {
+            Console.WriteLine("Exiting the program...");
+            Environment.Exit(0);
+            return Task.CompletedTask;
+        }
+    }
+
     public class CommandHandler
     {
         private readonly Dictionary<string, Command> Commands;
@@ -165,7 +168,7 @@ namespace FMCS
             };
         }
 
-        public void HandleCommand(string command)
+        public async Task HandleCommandAsync(string command)
         {
             string[] commandParts = command.Split(' ', 2);
             string mainCommand = commandParts[0].ToLower();
@@ -173,7 +176,7 @@ namespace FMCS
 
             if (Commands.ContainsKey(mainCommand))
             {
-                Commands[mainCommand].Execute(argument);
+                await Commands[mainCommand].ExecuteAsync(argument);
             }
             else
             {

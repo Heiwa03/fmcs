@@ -1,4 +1,7 @@
-
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using Hashing;
 
 namespace FMCS
@@ -6,7 +9,7 @@ namespace FMCS
     class FileHandler
     {
         // Method to read a file and return its contents as a byte array
-        public static byte[] ReadFileAsByteArray(string filePath)
+        public static async Task<byte[]> ReadFileAsByteArrayAsync(string filePath)
         {
             // Check if the file exists
             if (!File.Exists(filePath))
@@ -15,11 +18,11 @@ namespace FMCS
             }
 
             // Read the file contents into a byte array
-            return File.ReadAllBytes(filePath);
+            return await File.ReadAllBytesAsync(filePath);
         }
 
         // Method to read a file and return its contents as a string
-        public static string ReadFileAsString(string filePath)
+        public static async Task<string> ReadFileAsStringAsync(string filePath)
         {
             // Check if the file exists
             if (!File.Exists(filePath))
@@ -28,7 +31,7 @@ namespace FMCS
             }
 
             // Read the file contents into a string
-            return File.ReadAllText(filePath);
+            return await File.ReadAllTextAsync(filePath);
         }
 
         // Method to get all file paths in a specified folder
@@ -53,7 +56,7 @@ namespace FMCS
             {
                 foreach (string filePath in filePaths)
                 {
-                    byte[] fileContents = ReadFileAsByteArray(filePath);
+                    byte[] fileContents = File.ReadAllBytes(filePath);
                     string hash = hasher.Hash(fileContents);
                     writer.WriteLine($"{filePath}:{hash}");
                 }
@@ -61,7 +64,7 @@ namespace FMCS
         }
 
         // Method to detect changes in the directory
-        public static List<string> DetectChanges(List<string> filePaths, HashingAlgorithm hasher, string targetDir, bool isManual)
+        public static async Task<List<string>> DetectChangesAsync(List<string> filePaths, HashingAlgorithm hasher, string targetDir, bool isManual)
         {
             string hashListFilePath = Path.Combine(targetDir, RuntimeDirectoryManagement.DirName, RuntimeDirectoryManagement.HashListFileName);
             Dictionary<string, string> storedHashes = new Dictionary<string, string>();
@@ -71,7 +74,7 @@ namespace FMCS
             using (StreamReader reader = new StreamReader(hashListFilePath))
             {
                 string? line;
-                while ((line = reader.ReadLine()) != null)
+                while ((line = await reader.ReadLineAsync()) != null)
                 {
                     string[] parts = line.Split(':');
                     if (parts.Length == 2)
@@ -87,7 +90,7 @@ namespace FMCS
             // Compute the current hashes and compare with the stored hashes
             foreach (string filePath in currentFilePaths)
             {
-                byte[] fileContents = ReadFileAsByteArray(filePath);
+                byte[] fileContents = await ReadFileAsByteArrayAsync(filePath);
                 string currentHash = hasher.Hash(fileContents);
 
                 if (storedHashes.ContainsKey(filePath))

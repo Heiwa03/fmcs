@@ -9,7 +9,7 @@ namespace FMCS
         private static System.Timers.Timer? detectionTimer;
         public static HashingAlgorithm Hasher = new MD5();
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             try
             {
@@ -17,9 +17,8 @@ namespace FMCS
 
                 // Set up a timer to run the detection every 5 seconds
                 detectionTimer = new System.Timers.Timer(DetectionInterval);
-                detectionTimer.Elapsed += (sender, e) => RunDetection(false);
+                detectionTimer.Elapsed += async (sender, e) => await RunDetectionAsync(false);
                 detectionTimer.AutoReset = true;
-                detectionTimer.Enabled = true;
 
                 // Start the auto-detection on a separate thread
                 Thread autoDetectionThread = new Thread(() =>
@@ -34,7 +33,7 @@ namespace FMCS
                 string? command;
                 while ((command = Console.ReadLine()) != null)
                 {
-                    commandHandler.HandleCommand(command);
+                    await commandHandler.HandleCommandAsync(command);
                 }
             }
             catch (Exception ex)
@@ -56,7 +55,7 @@ namespace FMCS
             }
         }
 
-        public static void RunDetection(bool isManual)
+        public static async Task RunDetectionAsync(bool isManual)
         {
             try
             {
@@ -66,7 +65,7 @@ namespace FMCS
                 }
 
                 List<string> filePaths = FileHandler.GetFilePaths(TargetDir);
-                List<string> changes = FileHandler.DetectChanges(filePaths, Hasher, TargetDir, isManual);
+                List<string> changes = await FileHandler.DetectChangesAsync(filePaths, Hasher, TargetDir, isManual);
 
                 if (!isManual && changes.Count > 0)
                 {
