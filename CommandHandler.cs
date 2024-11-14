@@ -170,7 +170,13 @@ namespace FMCS
             try
             {
                 if (string.IsNullOrEmpty(argument))
+                
                 {
+                    string[] snapshotDirs = Directory.GetDirectories(Path.Combine(Program.TargetDir, RuntimeDirectoryManagement.DirName, "snapshots"));
+                    foreach (string dirinlist in snapshotDirs)
+                    {
+                        Console.WriteLine(Path.GetFileName(dirinlist));
+                    }
                     Console.WriteLine("Usage: revert <snapshot_timestamp>");
                     return Task.CompletedTask;
                 }
@@ -196,9 +202,15 @@ namespace FMCS
         private void RestoreSnapshot(string snapshotDir)
         {
             string[] snapshotFiles = Directory.GetFiles(snapshotDir);
+            List<string> filePaths = FileHandler.GetFilePaths(Program.TargetDir);
+            foreach (string filePath in filePaths)
+            {
+                File.Delete(filePath);
+            }
             foreach (string snapshotFile in snapshotFiles)
             {
                 string destFilePath = Path.Combine(Program.TargetDir, Path.GetFileName(snapshotFile));
+
                 File.Copy(snapshotFile, destFilePath, true);
             }
         }
