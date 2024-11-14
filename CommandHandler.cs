@@ -1,4 +1,9 @@
 using Hashing;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
+using Aspose.Drawing;
 
 namespace FMCS
 {
@@ -29,7 +34,10 @@ namespace FMCS
                 List<string> filePaths = FileHandler.GetFilePaths(Program.TargetDir);
                 FileHandler.GenerateInitialHashes(filePaths, Hasher, Program.TargetDir);
 
-                Console.WriteLine("Initial keys updated successfully.");
+                // Save a snapshot of the current files
+                SaveSnapshot(filePaths);
+
+                Console.WriteLine("Initial keys updated and snapshot saved successfully.");
 
                 // Run detection manually to print the status
                 await Program.RunDetectionAsync(true);
@@ -37,6 +45,18 @@ namespace FMCS
             catch (Exception ex)
             {
                 Console.WriteLine("An error occurred during commit: " + ex.Message);
+            }
+        }
+
+        private void SaveSnapshot(List<string> filePaths)
+        {
+            string snapshotDir = Path.Combine(Program.TargetDir, RuntimeDirectoryManagement.DirName, "snapshots", DateTime.Now.ToString("yyyyMMddHHmmss"));
+            Directory.CreateDirectory(snapshotDir);
+
+            foreach (string filePath in filePaths)
+            {
+                string destFilePath = Path.Combine(snapshotDir, Path.GetFileName(filePath));
+                File.Copy(filePath, destFilePath);
             }
         }
     }
@@ -101,7 +121,7 @@ namespace FMCS
                          fileInfo.Extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
                          fileInfo.Extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase))
                 {
-                    using (var image = Aspose.Drawing.Image.FromFile(argument))
+                    using (var image = Image.FromFile(argument))
                     {
                         Console.WriteLine("Resolution: " + image.Width + "x" + image.Height);
                     }
@@ -141,6 +161,49 @@ namespace FMCS
         }
     }
 
+    public class RevertCommand : Command
+    {
+        public RevertCommand(HashingAlgorithm hasher) : base(hasher) { }
+
+        public override Task ExecuteAsync(string? argument)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(argument))
+                {
+                    Console.WriteLine("Usage: revert <snapshot_timestamp>");
+                    return Task.CompletedTask;
+                }
+
+                string snapshotDir = Path.Combine(Program.TargetDir, RuntimeDirectoryManagement.DirName, "snapshots", argument);
+                if (!Directory.Exists(snapshotDir))
+                {
+                    Console.WriteLine("Snapshot not found: " + snapshotDir);
+                    return Task.CompletedTask;
+                }
+
+                RestoreSnapshot(snapshotDir);
+                Console.WriteLine("Reverted to snapshot: " + argument);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("An error occurred during revert: " + ex.Message);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        private void RestoreSnapshot(string snapshotDir)
+        {
+            string[] snapshotFiles = Directory.GetFiles(snapshotDir);
+            foreach (string snapshotFile in snapshotFiles)
+            {
+                string destFilePath = Path.Combine(Program.TargetDir, Path.GetFileName(snapshotFile));
+                File.Copy(snapshotFile, destFilePath, true);
+            }
+        }
+    }
+
     public class ExitCommand : Command
     {
         public ExitCommand(HashingAlgorithm hasher) : base(hasher) { }
@@ -164,6 +227,7 @@ namespace FMCS
                 { "commit", new CommitCommand(hasher) },
                 { "status", new StatusCommand(hasher) },
                 { "info", new InfoCommand(hasher) },
+                { "revert", new RevertCommand(hasher) },
                 { "exit", new ExitCommand(hasher) }
             };
         }
